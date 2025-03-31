@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biologia App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #E8F5E9;
+            color: #2E7D32;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .screen {
+            display: none;
+            padding: 20px;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        #question-screen .counter {
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        .question-text {
+            font-size: 24px;
+            line-height: 1.5;
+            margin-bottom: 30px;
+        }
+
+        .options-container button {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 15px;
+            font-size: 16px;
+            background-color: #81C784;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .options-container button:hover {
+            background-color: #66BB6A;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 25px;
+            background-color: white;
+            border-radius: 12.5px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress {
+            position: absolute;
+            height: 100%;
+            background-color: #43A047;
+            transition: width 0.1s linear;
+        }
+
+        .feedback {
+            padding: 20px;
+            text-align: center;
+            margin-top: 20px;
+            border-radius: 5px;
+        }
+
+        .correct {
+            background-color: #2E7D32;
+            color: white;
+        }
+
+        .incorrect {
+            background-color: #C62828;
+            color: white;
+        }
+
+        .timeout {
+            background-color: #C62828;
+            color: white;
+        }
+
+        .score {
+            font-size: 24px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 15px;
+            font-size: 18px;
+            background-color: #81C784;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #66BB6A;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 10px;
+            }
+
+            .question-text {
+                font-size: 20px;
+            }
+
+            .options-container button {
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Pantalla de inicio -->
+        <div id="start-screen" class="screen active">
+            <h1>Biologia</h1>
+            <button onclick="startGame()">Jugar</button>
+            <button onclick="exitApp()">Salir</button>
+        </div>
+
+        <!-- Pantalla de preguntas -->
+        <div id="question-screen" class="screen">
+            <div class="counter"></div>
+            <div class="question-text"></div>
+            <div class="options-container"></div>
+            <div class="progress-bar"></div>
+        </div>
+
+        <!-- Pantalla de retroalimentación -->
+        <div id="feedback-screen" class="screen"></div>
+
+        <!-- Pantalla final -->
+        <div id="score-screen" class="screen">
+            <h2>Joc terminat!</h2>
+            <div class="score"></div>
+            <button onclick="startGame()">Tornar a jugar</button>
+            <button onclick="exitApp()">Sortir</button>
+        </div>
+    </div>
+    <audio id="correct-sound" src="correct.wav"></audio>
+    <audio id="incorrect-sound" src="incorrect.wav"></audio>
+    <audio id="timeout-sound" src="timeout.wav"></audio>
+    <script>
+        // Datos del juego
+        const questions = [
+                {"question": "Quina és la cèl·lula principal del sistema nerviós?",
+                 "options": ["A) Neurona", "B) Glòbul vermell", "C) Osteòcit"],
+                 "answer": "A"},
+                {"question": "Quina és la funció principal del sistema nerviós?",
+                 "options": ["A) Transport d'oxigen", "B) Control i coordinació", "C) Digestió"],
+                 "answer": "B"},
+                {"question": "Quina part del sistema nerviós controla els moviments voluntaris?",
+                 "options": ["A) Cerebel", "B) Còrtex motor", "C) Bulb raquidi"],
+                 "answer": "B"},
+                {"question": "Com s'anomenen les cèl·lules de suport de les neurones?",
+                 "options": ["A) Cèl·lules glials", "B) Plaquetes", "C) Fibroblasts"],
+                 "answer": "A"},
+                {"question": "Quina estructura protegeix l'encèfal?",
+                 "options": ["A) Vèrtebres", "B) Crani", "C) Medul·la espinal"],
+                 "answer": "B"},
+                {"question": "Quina és la funció de la medul·la espinal?",
+                 "options": ["A) Processar la visió", "B) Senyals entre cervell i cos", "C) Bombar sang"],
+                 "answer": "B"},
+                {"question": "Quin és el neurotransmissor principal en la comunicació neuronal?",
+                 "options": ["A) Dopamina", "B) Serotonina", "C) Acetilcolina"],
+                 "answer": "C"},
+                {"question": "Quina part del cervell regula les emocions?",
+                 "options": ["A) Hipotàlem", "B) Amígdala", "C) Tàlem"],
+                 "answer": "B"},
+                {"question": "Quina és la funció del cerebel?",
+                 "options": ["A) Coordinació del moviment", "B) Regulació de la gana", "C) Processament auditiu"],
+                 "answer": "A"},
+                {"question": "Quin nervi és responsable de la visió?",
+                 "options": ["A) Nervi òptic", "B) Nervi vague", "C) Nervi trigemin"],
+                 "answer": "A"},
+                {"question": "Quin sistema nerviós controla funcions involuntàries com la respiració?",
+                 "options": ["A) Somàtic", "B) Autònom", "C) Sensorial"],
+                 "answer": "B"},
+                {"question": "Quina part del sistema nerviós actua com a centre de control?",
+                 "options": ["A) Medul·la espinal", "B) Cervell", "C) Nervis perifèrics"],
+                 "answer": "B"},
+                {"question": "Què és la sinapsi?",
+                 "options": ["A) Una malaltia neurològica", "B) Connexió entre neurones", "C) Un reflex automàtic"],
+                 "answer": "B"},
+                {"question": "Quins nervis porten informació del cos al cervell?",
+                 "options": ["A) Sensitius", "B) Motors", "C) Mixtos"],
+                 "answer": "A"},
+                {"question": "Com s'anomena la substància que recobreix alguns axons i augmenta la velocitat de transmissió?",
+                 "options": ["A) Mielina", "B) Dopamina", "C) Serotonina"],
+                 "answer": "A"},
+                {"question": "Quina estructura connecta els dos hemisferis cerebrals?",
+                 "options": ["A) Hipotàlem", "B) Cos callós", "C) Tronc encefàlic"],
+                 "answer": "B"},
+                {"question": "Quina estructura del cervell regula la temperatura corporal?",
+                 "options": ["A) Hipotàlem", "B) Hipocamp", "C) Cerebel"],
+                 "answer": "A"},
+                {"question": "Quina funció té el sistema nerviós parasimpàtic?",
+                 "options": ["A) Respondre a l'estrès", "B) Relaxar el cos", "C) Controlar el moviment"],
+                 "answer": "B"},
+                {"question": "Quin és l'òrgan principal del sistema nerviós central?",
+                 "options": ["A) Medul·la espinal", "B) Cervell", "C) Cor"],
+                 "answer": "B"}
+        ];
+
+        let score = 0;
+        let timer = null;
+        let progressInterval = null;
+        let currentQuestion = null;
+
+        // Elementos del DOM
+        const startScreen = document.getElementById('start-screen');
+        const questionScreen = document.getElementById('question-screen');
+        const feedbackScreen = document.getElementById('feedback-screen');
+        const scoreScreen = document.getElementById('score-screen');
+
+        // Sonidos
+        const correctSound = document.getElementById('correct-sound');
+        const incorrectSound = document.getElementById('incorrect-sound');
+        const timeoutSound = document.getElementById('timeout-sound');
+
+        function exitApp() {
+            window.close();
+        }
+
+        function startGame() {
+            score = 0;
+            questionsList = [...questions];
+            shuffleQuestions();
+            showQuestionScreen();
+            askQuestion();
+        }
+
+        function shuffleQuestions() {
+            for (let i = questionsList.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [questionsList[i], questionsList[j]] = [questionsList[j], questionsList[i]];
+            }
+        }
+
+        function showQuestionScreen() {
+            startScreen.classList.remove('active');
+            feedbackScreen.classList.remove('active');
+            scoreScreen.classList.remove('active');
+            questionScreen.classList.add('active');
+        }
+
+        function askQuestion() {
+            if (questionsList.length === 0) {
+                showFinalScore();
+                return;
+            }
+
+            const question = questionsList.pop();
+            currentQuestion = question;
+
+            // Actualizar contador de preguntas
+            const counter = document.querySelector('.counter');
+            const answered = questions.length - questionsList.length;
+            counter.textContent = `Pregunta ${answered}/${questions.length}`;
+
+            // Mostrar pregunta y opciones
+            const questionText = document.querySelector('.question-text');
+            questionText.textContent = question.question;
+
+            const optionsContainer = document.querySelector('.options-container');
+            optionsContainer.innerHTML = '';
+
+            question.options.forEach(option => {
+                const btn = document.createElement('button');
+                btn.textContent = option;
+                btn.onclick = () => checkAnswer(option[0]);
+                optionsContainer.appendChild(btn);
+            });
+
+            // Iniciar barra de progreso
+            startProgressBar();
+        }
+
+        function startProgressBar() {
+            const progressBar = document.querySelector('.progress-bar');
+            let progress = 100;
+
+            // Limpiar intervalos anteriores
+            if (timer) clearTimeout(timer);
+            if (progressInterval) clearInterval(progressInterval);
+
+            progressBar.innerHTML = `<div class="progress" style="width: ${progress}%"></div>`;
+
+            progressInterval = setInterval(() => {
+                progress -= 0.5;
+                progressBar.innerHTML = `<div class="progress" style="width: ${progress}%"></div>`;
+
+                if (progress <= 0) {
+                    clearInterval(progressInterval);
+                    checkAnswer('');
+                }
+            }, 50);
+
+            timer = setTimeout(() => {
+                clearInterval(progressInterval);
+                checkAnswer('');
+            }, 20000);
+        }
+
+        function checkAnswer(selected) {
+            // Limpiar intervalos y timeouts
+            clearTimeout(timer);
+            clearInterval(progressInterval);
+
+            const correct = currentQuestion.answer;
+            let message = '';
+            let colorClass = '';
+
+            if (selected === correct) {
+                score++;
+                message = '✅ Correcte! 🎉';
+                colorClass = 'correct';
+                playSound(correctSound);
+            } else if (selected === '') {
+                message = '⏰ Fora de temps 😱';
+                colorClass = 'timeout';
+                playSound(timeoutSound);
+            } else {
+                message = '❌ Incorrecte 😔';
+                colorClass = 'incorrect';
+                playSound(incorrectSound);
+            }
+
+            showFeedback(message, colorClass);
+        }
+
+        function showFeedback(message, colorClass) {
+            feedbackScreen.innerHTML = `<div class="feedback ${colorClass}">${message}</div>`;
+            feedbackScreen.classList.add('active');
+            setTimeout(() => {
+                feedbackScreen.classList.remove('active');
+                askQuestion();
+            }, 1000);
+        }
+
+        function playSound(soundElement) {
+            soundElement.currentTime = 0;
+            soundElement.play().catch(err => console.log('Error al reproducir el sonido:', err));
+        }
+
+        function showFinalScore() {
+            scoreScreen.querySelector('.score').innerHTML = `
+                <div>Puntuació: ${score}/${questions.length}</div>
+                <div>Percentatge: ${(score/questions.length * 100).toFixed(1)}%</div>
+            `;
+            startScreen.classList.remove('active');
+            feedbackScreen.classList.remove('active');
+            questionScreen.classList.remove('active');
+            scoreScreen.classList.add('active');
+        }
+
+        // Inicializar cuando se carga la página
+        window.onload = () => {
+            startScreen.classList.add('active');
+        };
+    </script>
+</body>
+</html>
